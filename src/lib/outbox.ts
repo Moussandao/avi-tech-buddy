@@ -67,7 +67,7 @@ export async function flushOutbox(): Promise<number> {
       const { __voice_key: voiceKey, ...payload } = item.payload as Record<string, unknown> & {
         __voice_key?: string;
       };
-      if (userId && !payload.user_id) payload.user_id = userId;
+      if (userId && !payload['user_id']) payload['user_id'] = userId;
       if (voiceKey) {
         const blob = await getLocalVoice(voiceKey).catch(() => undefined);
         if (blob) {
@@ -76,7 +76,7 @@ export async function flushOutbox(): Promise<number> {
             remaining.push(item);
             continue;
           }
-          payload.voice_note_url = path;
+          payload['voice_note_url'] = path;
         }
       }
       const { error } = await supabase.from(item.table).insert(payload as never);
