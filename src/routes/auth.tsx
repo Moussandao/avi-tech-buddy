@@ -93,6 +93,8 @@ function AuthPage() {
                 size="sm"
                 variant={language === l.code ? "default" : "ghost"}
                 onClick={() => setLanguage(l.code as Language)}
+                aria-label={l.label}
+                aria-pressed={language === l.code}
               >
                 {l.flag}
               </Button>
