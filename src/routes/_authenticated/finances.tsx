@@ -238,9 +238,7 @@ function Finances() {
                   )}
                   <div className="min-w-0 flex-1">
                     <p className="truncate font-medium">
-                      {t((`cat_${item.category}` as TranslationKey) in ({} as never)
-                        ? ("cat_other" as TranslationKey)
-                        : (`cat_${item.category}` as TranslationKey))}
+                      {t(`cat_${item.category}` as TranslationKey)}
                     </p>
                     <p className="truncate text-xs text-muted-foreground">
                       {new Date(item.occurred_at).toLocaleDateString()}
