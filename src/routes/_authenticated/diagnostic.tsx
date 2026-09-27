@@ -1,7 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQueryClient } from "@tanstack/react-query";
-import { AlertTriangle, Camera, ImagePlus, Loader2, Stethoscope } from "lucide-react";
+import { AlertTriangle, Camera, ChevronRight, ImagePlus, Loader2, Stethoscope } from "lucide-react";
+import { DiagnosisDetailSheet, SEVERITY_STYLE } from "@/components/DiagnosisDetailSheet";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
 
@@ -10,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
-import { useDiagnoses } from "@/lib/data";
+import { useDiagnoses, type Diagnosis } from "@/lib/data";
 import { diagnosePoultry, type DiagnosisResult } from "@/lib/diagnose.functions";
 import { demoDiagnosis } from "@/lib/diagnosis-demo";
 import { useSettings } from "@/lib/i18n";
@@ -59,19 +60,13 @@ function dataUrlToBlob(dataUrl: string): Blob {
   return new Blob([bytes], { type: mime });
 }
 
-const SEVERITY_STYLE: Record<DiagnosisResult["severity"], string> = {
-  low: "bg-success text-success-foreground",
-  medium: "bg-warning text-warning-foreground",
-  high: "bg-destructive text-destructive-foreground",
-  critical: "bg-destructive text-destructive-foreground ring-2 ring-destructive ring-offset-2 animate-pulse",
-};
-
 function Diagnostic() {
   const { t, language } = useSettings();
-  const online = useOnlineStatus();
+  const [selected, setSelected] = useState<Diagnosis | null>(null);
   const queryClient = useQueryClient();
   const { data: history = [] } = useDiagnoses();
   const runDiagnosis = useServerFn(diagnosePoultry);
+  const online = useOnlineStatus();
 
   const cameraRef = useRef<HTMLInputElement>(null);
   const galleryRef = useRef<HTMLInputElement>(null);
@@ -235,22 +230,33 @@ function Diagnostic() {
           ) : (
             <ul className="divide-y">
               {history.map((item) => (
-                <li key={item.id} className="flex items-center justify-between gap-2 py-3">
-                  <div className="min-w-0">
-                    <p className="truncate font-medium">{item.disease}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {new Date(item.created_at).toLocaleDateString()}
-                    </p>
-                  </div>
-                  <Badge className={SEVERITY_STYLE[item.severity]}>
-                    {t(`severity_${item.severity}` as "severity_low")}
-                  </Badge>
+                <li key={item.id}>
+                  <button
+                    type="button"
+                    onClick={() => setSelected(item)}
+                    aria-label={`${t("diagnosisDetail")} : ${item.disease}`}
+                    className="flex min-h-14 w-full items-center justify-between gap-2 rounded-lg px-1 py-3 text-start transition-colors hover:bg-secondary/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  >
+                    <div className="min-w-0">
+                      <p className="truncate font-medium">{item.disease}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {new Date(item.created_at).toLocaleDateString()}
+                      </p>
+                    </div>
+                    <span className="flex shrink-0 items-center gap-2">
+                      <Badge className={SEVERITY_STYLE[item.severity]}>
+                        {t(`severity_${item.severity}` as "severity_low")}
+                      </Badge>
+                      <ChevronRight className="size-4 text-muted-foreground rtl:rotate-180" />
+                    </span>
+                  </button>
                 </li>
               ))}
             </ul>
           )}
         </CardContent>
       </Card>
+      <DiagnosisDetailSheet diagnosis={selected} onClose={() => setSelected(null)} />
     </div>
   );
 }

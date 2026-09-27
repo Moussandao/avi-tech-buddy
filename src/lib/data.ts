@@ -61,6 +61,7 @@ export interface Diagnosis {
   summary: string | null;
   recommendations: string[];
   language: string;
+  is_demo?: boolean | null;
   created_at: string;
 }
 
@@ -162,7 +163,7 @@ export function useDiagnoses() {
     queryFn: async (): Promise<Diagnosis[]> => {
       const { data, error } = await supabase
         .from("diagnoses")
-        .select("id, batch_id, image_path, disease, severity, summary, recommendations, language, created_at")
+        .select("id, batch_id, image_path, disease, severity, summary, recommendations, language, is_demo, created_at")
         .order("created_at", { ascending: false })
         .limit(50);
       if (error) throw error;
