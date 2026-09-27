@@ -1,5 +1,6 @@
+import { AppLogo } from "@/components/AppLogo";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { Egg, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
@@ -82,7 +83,7 @@ function AuthPage() {
       <div className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center">
         <div className="mb-6 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2">
-            <Egg className="size-7 text-primary" />
+            <AppLogo />
             <span className="font-display text-2xl font-bold">{t("appName")}</span>
           </Link>
           <div className="flex gap-1">

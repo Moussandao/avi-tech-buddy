@@ -1,3 +1,4 @@
+import { AppLogo } from "@/components/AppLogo";
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import {
@@ -5,7 +6,6 @@ import {
   Bird,
   CloudOff,
   Coins,
-  Egg,
   Globe,
   LogOut,
   Moon,
@@ -102,7 +102,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     <div className="min-h-screen bg-background md:flex">
       <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col gap-2 bg-sidebar p-4 text-sidebar-foreground md:flex">
         <div className="mb-6 flex items-center gap-2 px-2">
-          <Egg className="size-7 text-sidebar-primary" />
+          <AppLogo />
           <span className="font-display text-2xl font-semibold">{t("appName")}</span>
         </div>
         {NAV.map((item) => {
@@ -139,7 +139,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="sticky top-0 z-20 border-b bg-card/95 backdrop-blur">
           <div className="flex items-center gap-2 px-4 py-3">
-            <Egg className="size-6 text-primary md:hidden" />
+            <AppLogo className="size-8 md:hidden" />
             <div className="min-w-0 flex-1">
               <p className="truncate font-display text-lg font-semibold leading-tight">
                 {profile?.farm_name || t("appName")}
