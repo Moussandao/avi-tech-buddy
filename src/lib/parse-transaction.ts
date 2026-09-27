@@ -45,8 +45,8 @@ export function parseTransaction(raw: string): ParsedTransaction {
   }
 
   // Numbers, allowing "50 000" / "50.000" / "1,5". The amount is the one after "pour/for/بـ", else the largest.
-  const numbers = [...text.matchAll(/\d{1,3}(?:[ \u00a0.]\d{3})+(?:,\d+)?|\d+(?:[.,]\d+)?/g)].map((m) => ({
-    value: Number(m[0].replace(/[ \u00a0]/g, "").replace(/\.(?=\d{3}\b)/g, "").replace(",", ".")),
+  const numbers = [...text.matchAll(/\d{1,3}(?:[ \u00a0.,]\d{3})+(?![\d])|\d+(?:[.,]\d+)?/g)].map((m) => ({
+    value: Number(m[0].replace(/[ \u00a0]/g, "").replace(/[.,](?=\d{3}(?!\d))/g, "").replace(",", ".")),
     index: m.index ?? 0,
   }));
   let amount: number | null = null;
