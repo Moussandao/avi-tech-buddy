@@ -206,7 +206,7 @@ function Diagnostic() {
           <CardContent className="space-y-4">
             <p className="text-base leading-relaxed">{result.summary}</p>
             <div>
-              <h3 className="mb-2 font-semibold">{t("recommendations")}</h3>
+              <h2 className="mb-2 font-semibold">{t("recommendations")}</h2>
               <ul className="space-y-2">
                 {result.recommendations.map((item, index) => (
                   <li key={index} className="flex gap-2 rounded-xl bg-secondary/60 p-3 text-sm">
