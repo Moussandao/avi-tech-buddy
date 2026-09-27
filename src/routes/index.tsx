@@ -1,5 +1,6 @@
+import { AppLogo } from "@/components/AppLogo";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { Bird, Coins, Egg, Stethoscope, WifiOff } from "lucide-react";
+import { Bird, Coins, Stethoscope, WifiOff } from "lucide-react";
 import { useEffect } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -48,7 +49,7 @@ function Landing() {
     <div className="min-h-screen bg-gradient-to-b from-secondary to-background">
       <header className="flex items-center justify-between px-5 py-4">
         <div className="flex items-center gap-2">
-          <Egg className="size-7 text-primary" />
+          <AppLogo />
           <span className="font-display text-2xl font-bold">{t("appName")}</span>
         </div>
         <div className="flex gap-1">
