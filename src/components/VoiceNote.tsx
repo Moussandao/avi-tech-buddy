@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 
 import { toast } from "sonner";
 
+import { ConfirmDeleteDialog } from "@/components/ConfirmDeleteDialog";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useSettings } from "@/lib/i18n";
@@ -64,9 +65,14 @@ export function VoiceRecorder({
     return (
       <div className="flex items-center gap-2">
         <audio src={url} controls className="h-10 flex-1" />
-        <Button type="button" variant="ghost" size="icon" aria-label={t("removeVoice")} onClick={() => onChange(null)}>
-          <Trash2 className="size-4" />
-        </Button>
+        <ConfirmDeleteDialog
+          onConfirm={() => onChange(null)}
+          trigger={
+            <Button type="button" variant="ghost" size="icon" aria-label={t("removeVoice")}>
+              <Trash2 className="size-4" />
+            </Button>
+          }
+        />
       </div>
     );
   }

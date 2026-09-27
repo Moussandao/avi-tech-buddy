@@ -5,6 +5,7 @@ import { toast } from "sonner";
 
 import { VoiceInput } from "@/components/VoiceInput";
 import { VoiceTransactionDialog } from "@/components/VoiceTransactionDialog";
+import { ConfirmDeleteDialog } from "@/components/ConfirmDeleteDialog";
 import { SpeakButton } from "@/components/SpeakButton";
 import { enqueue, flushOutbox } from "@/lib/outbox";
 import { saveVoiceLocally, uploadVoice } from "@/lib/voice-store";
@@ -296,14 +297,20 @@ function Finances() {
                   >
                     {money(Number(item.amount), item.currency)}
                   </span>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    aria-label={t("delete")}
-                    onClick={() => deleteTransaction.mutate(item.id)}
-                  >
-                    <Trash2 className="size-4" />
-                  </Button>
+                  <ConfirmDeleteDialog
+                    description={`${t(`cat_${item.category}` as TranslationKey)} · ${money(Number(item.amount), item.currency)} — ${t("confirmDeleteDesc")}`}
+                    onConfirm={() =>
+                      deleteTransaction.mutate(item.id, {
+                        onSuccess: () => toast.success(t("deleted")),
+                        onError: (e) => toast.error((e as Error).message),
+                      })
+                    }
+                    trigger={
+                      <Button variant="ghost" size="icon" aria-label={t("delete")}>
+                        <Trash2 className="size-4" />
+                      </Button>
+                    }
+                  />
                 </li>
               ))}
             </ul>
