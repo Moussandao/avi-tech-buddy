@@ -102,6 +102,7 @@ export type Database = {
           disease: string
           id: string
           image_path: string | null
+          is_demo: boolean
           language: string
           recommendations: string[]
           severity: string
@@ -115,6 +116,7 @@ export type Database = {
           disease: string
           id?: string
           image_path?: string | null
+          is_demo?: boolean
           language?: string
           recommendations?: string[]
           severity?: string
@@ -128,6 +130,7 @@ export type Database = {
           disease?: string
           id?: string
           image_path?: string | null
+          is_demo?: boolean
           language?: string
           recommendations?: string[]
           severity?: string
