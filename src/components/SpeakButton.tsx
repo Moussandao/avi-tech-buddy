@@ -69,7 +69,8 @@ export function SpeakButton({ text, label }: { text: string; label?: string }) {
       type="button"
       variant="secondary"
       size="sm"
-      className="gap-2"
+      className="h-11 gap-2"
+      aria-label={t("listen")}
       onClick={() => (state === "idle" ? void start() : stopAll())}
     >
       {state === "loading" ? (
