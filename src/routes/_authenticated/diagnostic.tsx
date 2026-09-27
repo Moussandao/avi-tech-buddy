@@ -48,7 +48,9 @@ async function toCompressedDataUrl(file: File): Promise<string> {
 }
 
 function dataUrlToBlob(dataUrl: string): Blob {
-  const [header, base64] = dataUrl.split(",");
+  const parts = dataUrl.split(",");
+  const header = parts[0] ?? "";
+  const base64 = parts[1] ?? "";
   const mime = header.match(/:(.*?);/)?.[1] ?? "image/jpeg";
   const binary = atob(base64);
   const bytes = new Uint8Array(binary.length);
