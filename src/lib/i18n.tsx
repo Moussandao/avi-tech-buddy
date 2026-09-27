@@ -21,7 +21,10 @@ interface SettingsValue {
   money: (amount: number, currencyCode?: string) => string;
 }
 
-const SettingsContext = createContext<SettingsValue | null>(null);
+// Reuse one context across hot reloads so the provider and consumers never diverge.
+const globalStore = globalThis as { __avitechSettingsCtx?: React.Context<SettingsValue | null> };
+const SettingsContext =
+  globalStore.__avitechSettingsCtx ?? (globalStore.__avitechSettingsCtx = createContext<SettingsValue | null>(null));
 
 const LANG_KEY = "avitech.language";
 const CUR_KEY = "avitech.currency";
