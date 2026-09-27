@@ -49,7 +49,7 @@ export async function uploadVoice(blob: Blob): Promise<string | null> {
     const path = `${userId}/${Date.now()}.${extensionFor(type)}`;
     const { error } = await supabase.storage
       .from("poultry-voice-notes")
-      .upload(path, blob, { contentType: type.split(";")[0] });
+      .upload(path, blob, { contentType: type.split(";")[0] ?? type });
     if (error) {
       console.error("Voice upload failed", error);
       return null;
