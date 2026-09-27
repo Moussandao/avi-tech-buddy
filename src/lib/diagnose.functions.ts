@@ -86,7 +86,13 @@ Write every text value in ${LANGUAGE_NAME[data.language]}.`;
       }
       const sev = parsed.severity.toLowerCase();
       const severity: DiagnosisResult["severity"] =
-        sev === "low" || sev === "high" || sev === "critical" ? sev : "medium";
+        /low|faible|bas|منخفض/.test(sev)
+          ? "low"
+          : /critic|critique|حرج/.test(sev)
+            ? "critical"
+            : /high|élev|elev|grave|مرتفع|عال/.test(sev)
+              ? "high"
+              : "medium";
       return {
         disease: parsed.diagnosis.slice(0, 200),
         severity,
