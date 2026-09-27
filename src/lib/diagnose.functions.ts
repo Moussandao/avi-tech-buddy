@@ -23,11 +23,72 @@ const NVIDIA_MODEL = "meta/llama-3.2-11b-vision-instruct";
 const TIMEOUT_MS = 25000;
 
 function extractJson(text: string): unknown {
-  const cleaned = text.replace(/```json/gi, "").replace(/```/g, "").trim();
+  const cleaned = text
+    .replace(/```json/gi, "")
+    .replace(/```/g, "")
+    .replace(/[“”]/g, '"')
+    .trim();
   const start = cleaned.indexOf("{");
   const end = cleaned.lastIndexOf("}");
   if (start === -1 || end === -1) throw new Error("no json in model output");
-  return JSON.parse(cleaned.slice(start, end + 1));
+  return JSON.parse(cleaned.slice(start, end + 1).replace(/,\s*([}\]])/g, "$1"));
+}
+
+/** Fallback: read a free-text answer (Diagnosis: ... / Severity: ... / bullet actions). */
+function parseFreeText(text: string): z.infer<typeof outputSchema> | null {
+  const lines = text.split(/\r?\n/).map((l) => l.replace(/[*#_]/g, "").trim()).filter(Boolean);
+  const pick = (re: RegExp) => {
+    const line = lines.find((l) => re.test(l));
+    return line ? line.replace(re, "").replace(/^[\s:：-]+/, "").trim() : "";
+  };
+  const diagnosis = pick(/^"?(diagnosis|diagnostic|maladie|التشخيص)"?\s*[:：]/i);
+  if (!diagnosis) return null;
+  const severity = pick(/^"?(severity|gravité|gravite|الخطورة)"?\s*[:：]/i) || "medium";
+  const summary = pick(/^"?(summary|résumé|resume|الملخص)"?\s*[:：]/i);
+  const actions = lines
+    .filter((l) => /^(\d+[.)]|[-•])\s+/.test(l))
+    .map((l) => l.replace(/^(\d+[.)]|[-•])\s+/, ""))
+    .slice(0, 5);
+  return { diagnosis, severity, summary, recommended_actions: actions };
+}
+
+async function askModel(apiKey: string, prompt: string, image: string): Promise<string> {
+  const response = await fetch("https://integrate.api.nvidia.com/v1/chat/completions", {
+    method: "POST",
+    signal: AbortSignal.timeout(TIMEOUT_MS),
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    },
+    body: JSON.stringify({
+      model: NVIDIA_MODEL,
+      max_tokens: 800,
+      temperature: 0.1,
+      messages: [
+        {
+          role: "user",
+          content: [
+            { type: "text", text: prompt },
+            { type: "image_url", image_url: { url: image } },
+          ],
+        },
+      ],
+    }),
+  });
+  if (!response.ok) {
+    throw new Error(`HTTP ${response.status} ${await response.text().catch(() => "")}`.slice(0, 400));
+  }
+  const json = (await response.json()) as { choices?: { message?: { content?: string } }[] };
+  return json.choices?.[0]?.message?.content ?? "";
+}
+
+function readAnswer(content: string): z.infer<typeof outputSchema> | null {
+  try {
+    return outputSchema.parse(extractJson(content));
+  } catch {
+    return parseFreeText(content);
+  }
 }
 
 export const diagnosePoultry = createServerFn({ method: "POST" })
@@ -43,45 +104,22 @@ Analyse the poultry photo and answer ONLY with a JSON object with keys:
 "severity" (exactly "low", "medium", "high" or "critical"),
 "summary" (max 2 sentences on what you see; say so if the image is unclear),
 "recommended_actions" (3 to 5 concrete actions doable with local means).
-Write every text value in ${LANGUAGE_NAME[data.language]}.`;
+Write every text value in ${LANGUAGE_NAME[data.language]}.
+Your reply must start with { and end with }. No markdown, no explanation outside the JSON.
+Example: {"diagnosis":"...","severity":"medium","summary":"...","recommended_actions":["...","...","..."]}`;
+    const strictPrompt = `${prompt}
+IMPORTANT: your previous answer was not valid JSON. Reply with the JSON object only, even if the image is unclear (then say so in "summary").`;
 
     try {
-      const response = await fetch("https://integrate.api.nvidia.com/v1/chat/completions", {
-        method: "POST",
-        signal: AbortSignal.timeout(TIMEOUT_MS),
-        headers: {
-          Authorization: `Bearer ${apiKey}`,
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-        body: JSON.stringify({
-          model: NVIDIA_MODEL,
-          max_tokens: 600,
-          temperature: 0.2,
-          messages: [
-            {
-              role: "user",
-              content: [
-                { type: "text", text: prompt },
-                { type: "image_url", image_url: { url: data.imageDataUrl } },
-              ],
-            },
-          ],
-        }),
-      });
-      if (!response.ok) {
-        console.error("NVIDIA diagnosis failed: HTTP", response.status, await response.text().catch(() => ""));
-        return demoDiagnosis(data.language);
+      let content = await askModel(apiKey, prompt, data.imageDataUrl);
+      let parsed = readAnswer(content);
+      if (!parsed) {
+        console.warn("NVIDIA diagnosis: unreadable answer, retrying", content.slice(0, 300));
+        content = await askModel(apiKey, strictPrompt, data.imageDataUrl);
+        parsed = readAnswer(content);
       }
-      const json = (await response.json()) as {
-        choices?: { message?: { content?: string } }[];
-      };
-      const content = json.choices?.[0]?.message?.content ?? "";
-      let parsed: z.infer<typeof outputSchema>;
-      try {
-        parsed = outputSchema.parse(extractJson(content));
-      } catch (parseError) {
-        console.error("NVIDIA diagnosis failed: unreadable answer", parseError, content.slice(0, 300));
+      if (!parsed) {
+        console.error("NVIDIA diagnosis failed: unreadable answer after retry", content.slice(0, 300));
         return demoDiagnosis(data.language);
       }
       const sev = parsed.severity.toLowerCase();
