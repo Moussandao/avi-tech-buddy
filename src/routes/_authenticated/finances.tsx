@@ -29,7 +29,7 @@ export const Route = createFileRoute("/_authenticated/finances")({
       { property: "og:description", content: "Dépenses, ventes et solde de votre exploitation avicole." },
     ],
   }),
-  component: Finances;
+  component: Finances,
 });
 
 const EXPENSE_CATEGORIES: { value: string; key: TranslationKey }[] = [
