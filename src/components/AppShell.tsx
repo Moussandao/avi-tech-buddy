@@ -30,7 +30,7 @@ import { useCachePersistence, useOutboxSync, useProfile, useUpdateProfile } from
 import { useSettings } from "@/lib/i18n";
 import { CURRENCIES } from "@/lib/currency";
 import { LANGUAGES, type Language } from "@/lib/translations";
-import { useOnlineStatus, useOutbox } from "@/lib/outbox";
+import { discardFailed, retryFailed, useOnlineStatus, useOutbox } from "@/lib/outbox";
 import { cn } from "@/lib/utils";
 
 const NAV = [
@@ -154,10 +154,27 @@ export function AppShell({ children }: { children: ReactNode }) {
                   {online ? <Wifi className="size-3" /> : <CloudOff className="size-3" />}
                   {online ? t("offlineReady") : t("offline")}
                 </Badge>
-                {pending.length > 0 && (
+                {pending.filter((i) => !i.failed).length > 0 && (
                   <span className="text-[11px] text-muted-foreground">
-                    {t("pendingSync", { n: pending.length })}
+                    {t("pendingSync", { n: pending.filter((i) => !i.failed).length })}
                   </span>
+                )}
+                {pending.some((i) => i.failed) && (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button type="button" className="rounded-md bg-destructive/15 px-2 py-0.5 text-[11px] font-medium text-destructive">
+                        {t("syncFailed", { n: pending.filter((i) => i.failed).length })}
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="start">
+                      <DropdownMenuItem className="min-h-11" onClick={() => retryFailed()}>
+                        {t("syncRetry")}
+                      </DropdownMenuItem>
+                      <DropdownMenuItem className="min-h-11 text-destructive" onClick={() => discardFailed()}>
+                        {t("syncDiscard")}
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 )}
               </div>
             </div>
