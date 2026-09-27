@@ -19,8 +19,8 @@ const outputSchema = z.object({
 });
 
 const LANGUAGE_NAME = { fr: "français", en: "English", ar: "العربية" } as const;
-const NVIDIA_MODEL = "meta/llama-3.2-90b-vision-instruct";
-const TIMEOUT_MS = 8000;
+const NVIDIA_MODEL = "meta/llama-3.2-11b-vision-instruct";
+const TIMEOUT_MS = 25000;
 
 function extractJson(text: string): unknown {
   const cleaned = text.replace(/```json/gi, "").replace(/```/g, "").trim();
@@ -70,16 +70,29 @@ Write every text value in ${LANGUAGE_NAME[data.language]}.`;
         }),
       });
       if (!response.ok) {
-        console.error("NVIDIA error", response.status, await response.text().catch(() => ""));
+        console.error("NVIDIA diagnosis failed: HTTP", response.status, await response.text().catch(() => ""));
         return demoDiagnosis(data.language);
       }
       const json = (await response.json()) as {
         choices?: { message?: { content?: string } }[];
       };
-      const parsed = outputSchema.parse(extractJson(json.choices?.[0]?.message?.content ?? ""));
+      const content = json.choices?.[0]?.message?.content ?? "";
+      let parsed: z.infer<typeof outputSchema>;
+      try {
+        parsed = outputSchema.parse(extractJson(content));
+      } catch (parseError) {
+        console.error("NVIDIA diagnosis failed: unreadable answer", parseError, content.slice(0, 300));
+        return demoDiagnosis(data.language);
+      }
       const sev = parsed.severity.toLowerCase();
       const severity: DiagnosisResult["severity"] =
-        sev === "low" || sev === "high" || sev === "critical" ? sev : "medium";
+        /low|faible|bas|منخفض/.test(sev)
+          ? "low"
+          : /critic|critique|حرج/.test(sev)
+            ? "critical"
+            : /high|élev|elev|grave|مرتفع|عال/.test(sev)
+              ? "high"
+              : "medium";
       return {
         disease: parsed.diagnosis.slice(0, 200),
         severity,
@@ -88,7 +101,8 @@ Write every text value in ${LANGUAGE_NAME[data.language]}.`;
         isDemo: false,
       };
     } catch (error) {
-      console.error("NVIDIA diagnosis failed, using demo", error);
+      const timedOut = error instanceof Error && (error.name === "TimeoutError" || error.name === "AbortError");
+      console.error(timedOut ? "NVIDIA diagnosis failed: timeout" : "NVIDIA diagnosis failed: network", error);
       return demoDiagnosis(data.language);
     }
   });
