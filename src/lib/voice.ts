@@ -49,13 +49,32 @@ export function useSpeechInput(language: Language, onResult: (text: string) => v
   return { listening, supported, start, stop };
 }
 
-export function speak(text: string, language: Language) {
-  if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
+function loadVoices(): Promise<SpeechSynthesisVoice[]> {
+  return new Promise((resolve) => {
+    const v = window.speechSynthesis.getVoices();
+    if (v.length) return resolve(v);
+    const done = () => resolve(window.speechSynthesis.getVoices());
+    window.speechSynthesis.addEventListener("voiceschanged", done, { once: true });
+    window.setTimeout(done, 1500);
+  });
+}
+
+export async function speak(text: string, language: Language, onEnd?: () => void): Promise<boolean> {
+  if (typeof window === "undefined" || !("speechSynthesis" in window)) return false;
   window.speechSynthesis.cancel();
+  const locale = SPEECH_LOCALE[language];
+  const voices = await loadVoices();
+  const voice =
+    voices.find((v) => v.lang === locale) ?? voices.find((v) => v.lang.startsWith(locale.slice(0, 2)));
+  if (!voice && language === "ar") return false;
   const utterance = new SpeechSynthesisUtterance(text);
-  utterance.lang = SPEECH_LOCALE[language];
+  utterance.lang = locale;
+  if (voice) utterance.voice = voice;
   utterance.rate = 0.95;
+  utterance.onend = () => onEnd?.();
+  utterance.onerror = () => onEnd?.();
   window.speechSynthesis.speak(utterance);
+  return true;
 }
 
 export function stopSpeaking() {
