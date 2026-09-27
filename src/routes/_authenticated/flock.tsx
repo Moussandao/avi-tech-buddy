@@ -248,18 +248,6 @@ function Flock() {
           </Card>
         );
       })}
-
-      {/* Placeholder select kept accessible for screen readers on empty state */}
-      <div className="sr-only">
-        <Select>
-          <SelectTrigger>
-            <SelectValue placeholder={t("none")} />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="none">{t("none")}</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
     </div>
   );
 }
