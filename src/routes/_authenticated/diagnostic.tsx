@@ -62,6 +62,7 @@ const SEVERITY_STYLE: Record<DiagnosisResult["severity"], string> = {
   low: "bg-success text-success-foreground",
   medium: "bg-warning text-warning-foreground",
   high: "bg-destructive text-destructive-foreground",
+  critical: "bg-destructive text-destructive-foreground ring-2 ring-destructive ring-offset-2 animate-pulse",
 };
 
 function Diagnostic() {
@@ -105,7 +106,7 @@ function Diagnostic() {
       if (userId) {
         const path = `${userId}/${Date.now()}.jpg`;
         const { error: uploadError } = await supabase.storage
-          .from("diagnoses")
+          .from("poultry-health-images")
           .upload(path, dataUrlToBlob(preview), { contentType: "image/jpeg" });
         if (!uploadError) imagePath = path;
         await supabase.from("diagnoses").insert({

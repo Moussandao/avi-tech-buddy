@@ -1,3 +1,5 @@
+import { Skeleton } from "@/components/ui/skeleton";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Droplets, Stethoscope, Thermometer, TrendingDown, TrendingUp, Users } from "lucide-react";
 import { useState } from "react";
@@ -69,7 +71,7 @@ function Kpi({
 
 function Dashboard() {
   const { t, money } = useSettings();
-  const { data: batches = [] } = useBatches();
+  const { data: batches = [], isPending } = useBatches();
   const { data: events = [] } = useBatchEvents();
   const { data: readings = [] } = useReadings();
   const { data: transactions = [] } = useTransactions();
@@ -77,6 +79,7 @@ function Dashboard() {
 
   const [temperature, setTemperature] = useState("");
   const [humidity, setHumidity] = useState("");
+  const [readingBatch, setReadingBatch] = useState("none");
 
   const active = batches.filter((b) => b.is_active);
   const headcount = active.reduce((sum, b) => sum + batchAlive(b, events), 0);
@@ -111,12 +114,27 @@ function Dashboard() {
     const result = await createReading.mutateAsync({
       temperature: temperature ? Number(temperature) : null,
       humidity: humidity ? Number(humidity) : null,
+      batch_id: readingBatch === "none" ? null : readingBatch,
       recorded_at: new Date().toISOString(),
     });
     toast.success(result.queued ? t("savedOffline") : t("saved"));
     setTemperature("");
     setHumidity("");
   };
+
+  if (isPending) {
+    return (
+      <div className="mx-auto max-w-4xl space-y-4">
+        <Skeleton className="h-8 w-48" />
+        <div className="grid grid-cols-2 gap-3">
+          {[0, 1, 2, 3].map((i) => (
+            <Skeleton key={i} className="h-24" />
+          ))}
+        </div>
+        <Skeleton className="h-64" />
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto max-w-4xl space-y-4">
@@ -224,7 +242,23 @@ function Dashboard() {
                 className="h-12"
               />
             </div>
-            <Button type="submit" className="col-span-2 h-12 sm:col-span-1 sm:self-end">
+            <div className="col-span-2 space-y-1 sm:col-span-3">
+              <Label className="text-xs">{t("linkedBatch")}</Label>
+              <Select value={readingBatch} onValueChange={setReadingBatch}>
+                <SelectTrigger className="h-12">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">{t("none")}</SelectItem>
+                  {active.map((b) => (
+                    <SelectItem key={b.id} value={b.id}>
+                      {b.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <Button type="submit" className="col-span-2 h-12 sm:col-span-3">
               {t("addReading")}
             </Button>
           </form>

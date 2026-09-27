@@ -10,7 +10,7 @@ const inputSchema = z.object({
 
 export interface DiagnosisResult {
   disease: string;
-  severity: "low" | "medium" | "high";
+  severity: "low" | "medium" | "high" | "critical";
   summary: string;
   recommendations: string[];
 }
@@ -35,7 +35,7 @@ export const diagnosePoultry = createServerFn({ method: "POST" })
     const prompt = `Tu es un vétérinaire aviaire expérimenté travaillant avec de petits élevages africains.
 Analyse la photo de volaille fournie et réponds UNIQUEMENT par un objet JSON avec ces clés :
 "disease" (nom de la maladie ou anomalie la plus probable),
-"severity" (exactement "low", "medium" ou "high"),
+"severity" (exactement "low", "medium", "high" ou "critical" si danger de mort rapide pour le lot),
 "summary" (2 phrases maximum expliquant ce que tu observes),
 "recommendations" (liste de 3 à 5 actions concrètes, réalisables avec des moyens locaux).
 Rédige tous les textes en ${LANGUAGE_NAME[data.language]}. Reste prudent : si l'image est peu lisible, dis-le dans "summary".`;
@@ -107,7 +107,9 @@ Rédige tous les textes en ${LANGUAGE_NAME[data.language]}. Reste prudent : si l
 
     const parsed = extractJson(text) as Partial<DiagnosisResult>;
     const severity =
-      parsed.severity === "low" || parsed.severity === "high" ? parsed.severity : "medium";
+      parsed.severity === "low" || parsed.severity === "high" || parsed.severity === "critical"
+        ? parsed.severity
+        : "medium";
 
     return {
       disease: String(parsed.disease ?? "—").slice(0, 160),

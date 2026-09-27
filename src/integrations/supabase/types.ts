@@ -59,6 +59,7 @@ export type Database = {
         Row: {
           breed: string | null
           created_at: string
+          current_count: number
           id: string
           initial_count: number
           is_active: boolean
@@ -70,6 +71,7 @@ export type Database = {
         Insert: {
           breed?: string | null
           created_at?: string
+          current_count?: number
           id?: string
           initial_count?: number
           is_active?: boolean
@@ -81,6 +83,7 @@ export type Database = {
         Update: {
           breed?: string | null
           created_at?: string
+          current_count?: number
           id?: string
           initial_count?: number
           is_active?: boolean
@@ -93,6 +96,7 @@ export type Database = {
       }
       diagnoses: {
         Row: {
+          audio_url: string | null
           batch_id: string | null
           created_at: string
           disease: string
@@ -105,6 +109,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          audio_url?: string | null
           batch_id?: string | null
           created_at?: string
           disease: string
@@ -117,6 +122,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          audio_url?: string | null
           batch_id?: string | null
           created_at?: string
           disease?: string
@@ -167,6 +173,7 @@ export type Database = {
       }
       readings: {
         Row: {
+          batch_id: string | null
           created_at: string
           humidity: number | null
           id: string
@@ -175,6 +182,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          batch_id?: string | null
           created_at?: string
           humidity?: number | null
           id?: string
@@ -183,6 +191,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          batch_id?: string | null
           created_at?: string
           humidity?: number | null
           id?: string
@@ -190,7 +199,15 @@ export type Database = {
           temperature?: number | null
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "readings_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "batches"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       transactions: {
         Row: {
@@ -204,6 +221,7 @@ export type Database = {
           note: string | null
           occurred_at: string
           user_id: string
+          voice_note_url: string | null
         }
         Insert: {
           amount?: number
@@ -216,6 +234,7 @@ export type Database = {
           note?: string | null
           occurred_at?: string
           user_id: string
+          voice_note_url?: string | null
         }
         Update: {
           amount?: number
@@ -228,6 +247,7 @@ export type Database = {
           note?: string | null
           occurred_at?: string
           user_id?: string
+          voice_note_url?: string | null
         }
         Relationships: [
           {

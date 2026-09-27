@@ -26,7 +26,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { supabase } from "@/integrations/supabase/client";
-import { useOutboxSync, useProfile, useUpdateProfile } from "@/lib/data";
+import { useCachePersistence, useOutboxSync, useProfile, useUpdateProfile } from "@/lib/data";
 import { useSettings } from "@/lib/i18n";
 import { CURRENCIES } from "@/lib/currency";
 import { LANGUAGES, type Language } from "@/lib/translations";
@@ -69,6 +69,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
 
   useOutboxSync();
+  useCachePersistence();
 
   // Apply the saved preferences from the farm profile once it loads.
   useEffect(() => {
@@ -94,6 +95,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const handleSignOut = async () => {
     await queryClient.cancelQueries();
     queryClient.clear();
+    localStorage.removeItem("avitech.cache");
     await supabase.auth.signOut();
     navigate({ to: "/auth", search: { mode: "signin" }, replace: true });
   };

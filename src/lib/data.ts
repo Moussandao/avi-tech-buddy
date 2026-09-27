@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { dehydrate, hydrate } from "@tanstack/react-query";
 import { useEffect } from "react";
 
 import { supabase } from "@/integrations/supabase/client";
@@ -17,6 +18,7 @@ export interface Batch {
   breed: string | null;
   start_date: string;
   initial_count: number;
+  current_count: number;
   is_active: boolean;
   notes: string | null;
 }
@@ -34,6 +36,7 @@ export interface Reading {
   id: string;
   temperature: number | null;
   humidity: number | null;
+  batch_id: string | null;
   recorded_at: string;
 }
 
@@ -45,6 +48,7 @@ export interface Transaction {
   amount: number;
   currency: string;
   note: string | null;
+  voice_note_url: string | null;
   occurred_at: string;
 }
 
@@ -53,7 +57,7 @@ export interface Diagnosis {
   batch_id: string | null;
   image_path: string | null;
   disease: string;
-  severity: "low" | "medium" | "high";
+  severity: "low" | "medium" | "high" | "critical";
   summary: string | null;
   recommendations: string[];
   language: string;
@@ -98,7 +102,7 @@ export function useBatches() {
     queryFn: async (): Promise<Batch[]> => {
       const { data, error } = await supabase
         .from("batches")
-        .select("id, name, breed, start_date, initial_count, is_active, notes")
+        .select("id, name, breed, start_date, initial_count, current_count, is_active, notes")
         .order("start_date", { ascending: false });
       if (error) throw error;
       return (data ?? []) as Batch[];
@@ -127,7 +131,7 @@ export function useReadings() {
     queryFn: async (): Promise<Reading[]> => {
       const { data, error } = await supabase
         .from("readings")
-        .select("id, temperature, humidity, recorded_at")
+        .select("id, temperature, humidity, batch_id, recorded_at")
         .order("recorded_at", { ascending: false })
         .limit(100);
       if (error) throw error;
@@ -142,7 +146,7 @@ export function useTransactions() {
     queryFn: async (): Promise<Transaction[]> => {
       const { data, error } = await supabase
         .from("transactions")
-        .select("id, batch_id, kind, category, amount, currency, note, occurred_at")
+        .select("id, batch_id, kind, category, amount, currency, note, voice_note_url, occurred_at")
         .order("occurred_at", { ascending: false })
         .limit(300);
       if (error) throw error;
@@ -228,4 +232,35 @@ export function batchAlive(batch: Batch, events: BatchEvent[]): number {
     .filter((e) => e.batch_id === batch.id && e.event_type === "mortality")
     .reduce((sum, e) => sum + Number(e.quantity || 0), 0);
   return Math.max(0, batch.initial_count - dead);
+}
+
+const CACHE_KEY = "avitech.cache";
+
+/** Keep the last loaded data on the phone so it stays visible offline. */
+export function useCachePersistence() {
+  const qc = useQueryClient();
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(CACHE_KEY);
+      if (raw) hydrate(qc, JSON.parse(raw));
+    } catch {
+      /* ignore corrupt cache */
+    }
+    let timer: number | undefined;
+    const unsub = qc.getQueryCache().subscribe(() => {
+      window.clearTimeout(timer);
+      timer = window.setTimeout(() => {
+        try {
+          const state = dehydrate(qc, { shouldDehydrateQuery: (q) => q.state.status === "success" });
+          localStorage.setItem(CACHE_KEY, JSON.stringify(state));
+        } catch {
+          /* storage full */
+        }
+      }, 1000);
+    });
+    return () => {
+      unsub();
+      window.clearTimeout(timer);
+    };
+  }, [qc]);
 }
