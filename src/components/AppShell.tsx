@@ -6,7 +6,6 @@ import {
   Bird,
   CloudOff,
   Coins,
-  Egg,
   Globe,
   LogOut,
   Moon,
