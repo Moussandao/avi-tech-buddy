@@ -20,10 +20,12 @@ export default defineConfig({
         strategies: "generateSW",
         registerType: "autoUpdate",
         injectRegister: null,
+        outDir: "dist/client",
         manifest: false, // public/manifest.webmanifest already exists
         devOptions: { enabled: false },
         workbox: {
-          swDest: "sw.js",
+          globDirectory: "dist/client",
+          swDest: "dist/client/sw.js",
           globPatterns: ["**/*.{js,css,woff2,png,svg,ico,webmanifest}"],
           navigateFallback: null,
           cleanupOutdatedCaches: true,
