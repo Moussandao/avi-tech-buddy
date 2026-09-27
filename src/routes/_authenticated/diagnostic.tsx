@@ -66,6 +66,7 @@ function Diagnostic() {
   const queryClient = useQueryClient();
   const { data: history = [] } = useDiagnoses();
   const runDiagnosis = useServerFn(diagnosePoultry);
+  const online = useOnlineStatus();
 
   const cameraRef = useRef<HTMLInputElement>(null);
   const galleryRef = useRef<HTMLInputElement>(null);
