@@ -61,6 +61,11 @@ export function VoiceTransactionDialog({
           >
             {supported ? <Mic className="size-14" /> : <MicOff className="size-14" />}
           </button>
+          {!supported && (
+            <p role="status" className="text-center text-sm text-warning">
+              {t("voiceUnsupported")}
+            </p>
+          )}
           {transcript && (
             <div className="w-full space-y-2 rounded-xl bg-secondary p-3 text-sm">
               <p className="italic">« {transcript} »</p>

@@ -1,6 +1,8 @@
 import { Mic, Square, Trash2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
+import { toast } from "sonner";
+
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useSettings } from "@/lib/i18n";
@@ -27,12 +29,20 @@ export function VoiceRecorder({
     return () => URL.revokeObjectURL(u);
   }, [value]);
 
-  if (typeof window !== "undefined" && typeof MediaRecorder === "undefined") return null;
+  if (typeof window !== "undefined" && typeof MediaRecorder === "undefined")
+    return <p className="text-sm text-muted-foreground">{t("micUnavailable")}</p>;
 
   const start = async () => {
     try {
+      if (!navigator.mediaDevices?.getUserMedia) {
+        toast.error(t("micUnavailable"));
+        return;
+      }
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const recorder = new MediaRecorder(stream);
+      const mimeType = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4", "audio/ogg"].find(
+        (m) => MediaRecorder.isTypeSupported?.(m),
+      );
+      const recorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream);
       const chunks: Blob[] = [];
       recorder.ondataavailable = (e) => chunks.push(e.data);
       recorder.onstop = () => {
@@ -43,8 +53,10 @@ export function VoiceRecorder({
       recorder.start();
       recorderRef.current = recorder;
       setRecording(true);
-    } catch {
+    } catch (e) {
       setRecording(false);
+      const name = (e as { name?: string })?.name;
+      toast.error(name === "NotAllowedError" || name === "SecurityError" ? t("micDenied") : t("micUnavailable"));
     }
   };
 
