@@ -1,24 +1,101 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { Bird, Coins, Egg, Stethoscope, WifiOff } from "lucide-react";
+import { useEffect } from "react";
 
-// No head() here: the home route inherits title/description/og/twitter from
-// __root.tsx, and ships no og:image so serve-time hosting can inject the
-// project's social preview (explicit og:image or latest screenshot).
+import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
+import { useSettings } from "@/lib/i18n";
+import { LANGUAGES, type Language } from "@/lib/translations";
+
 export const Route = createFileRoute("/")({
-  component: Index,
+  head: () => ({
+    meta: [
+      { title: "AviTech — Gestion avicole pan-africaine" },
+      {
+        name: "description",
+        content:
+          "AviTech aide les éleveurs de volailles à suivre leurs lots, leurs finances et la santé de leurs animaux, même hors connexion.",
+      },
+      { property: "og:title", content: "AviTech — Gestion avicole pan-africaine" },
+      {
+        property: "og:description",
+        content:
+          "Suivi du cheptel, diagnostic vétérinaire assisté par IA et gestion financière en français, anglais et arabe.",
+      },
+    ],
+  }),
+  component: Landing,
 });
 
-// IMPORTANT: Replace this placeholder. See ./README.md for routing conventions.
-function Index() {
+function Landing() {
+  const { t, language, setLanguage } = useSettings();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    void supabase.auth.getSession().then(({ data }) => {
+      if (data.session) navigate({ to: "/dashboard", replace: true });
+    });
+  }, [navigate]);
+
+  const features = [
+    { icon: Stethoscope, key: "diagnosticTitle" as const },
+    { icon: Bird, key: "flockTitle" as const },
+    { icon: Coins, key: "financeTitle" as const },
+    { icon: WifiOff, key: "offlineReady" as const },
+  ];
+
   return (
-    <div
-      className="flex min-h-screen items-center justify-center"
-      style={{ backgroundColor: "#fcfbf8" }}
-    >
-      <img
-        data-lovable-blank-page-placeholder="REMOVE_THIS"
-        src="https://cdn.gpteng.co/blank-app-v1.svg"
-        alt="Your app will live here!"
-      />
+    <div className="min-h-screen bg-gradient-to-b from-secondary to-background">
+      <header className="flex items-center justify-between px-5 py-4">
+        <div className="flex items-center gap-2">
+          <Egg className="size-7 text-primary" />
+          <span className="font-display text-2xl font-bold">{t("appName")}</span>
+        </div>
+        <div className="flex gap-1">
+          {LANGUAGES.map((l) => (
+            <Button
+              key={l.code}
+              size="sm"
+              variant={language === l.code ? "default" : "ghost"}
+              onClick={() => setLanguage(l.code as Language)}
+            >
+              {l.flag}
+            </Button>
+          ))}
+        </div>
+      </header>
+
+      <main className="mx-auto max-w-2xl px-5 pb-16 pt-6 text-center">
+        <h1 className="font-display text-4xl font-bold leading-tight text-foreground md:text-5xl">
+          {t("tagline")}
+        </h1>
+        <p className="mx-auto mt-4 max-w-lg text-lg text-muted-foreground">{t("heroText")}</p>
+
+        <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
+          <Button asChild size="lg" className="h-14 text-base">
+            <Link to="/auth" search={{ mode: "signup" }}>
+              {t("getStarted")}
+            </Link>
+          </Button>
+          <Button asChild size="lg" variant="secondary" className="h-14 text-base">
+            <Link to="/auth" search={{ mode: "signin" }}>
+              {t("signIn")}
+            </Link>
+          </Button>
+        </div>
+
+        <div className="mt-12 grid grid-cols-2 gap-3">
+          {features.map(({ icon: Icon, key }) => (
+            <div
+              key={key}
+              className="rounded-2xl border bg-card p-5 text-start shadow-sm"
+            >
+              <Icon className="size-7 text-primary" />
+              <p className="mt-3 font-semibold">{t(key)}</p>
+            </div>
+          ))}
+        </div>
+      </main>
     </div>
   );
 }
