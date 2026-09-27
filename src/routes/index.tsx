@@ -11,13 +11,13 @@ import { LANGUAGES, type Language } from "@/lib/translations";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "AviTech — Gestion avicole pan-africaine" },
+      { title: "AviTech — L’élevage de volailles, simplifié" },
       {
         name: "description",
         content:
           "AviTech aide les éleveurs de volailles à suivre leurs lots, leurs finances et la santé de leurs animaux, même hors connexion.",
       },
-      { property: "og:title", content: "AviTech — Gestion avicole pan-africaine" },
+      { property: "og:title", content: "AviTech — L’élevage de volailles, simplifié" },
       {
         property: "og:description",
         content:
