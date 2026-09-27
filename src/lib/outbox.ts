@@ -139,7 +139,7 @@ export async function flushOutbox(): Promise<number> {
           remaining.push(item);
         } else {
           const attempts = (item.attempts ?? 0) + 1;
-          remaining.push({ ...item, attempts, failed: attempts >= MAX_ATTEMPTS, lastError: error.message });
+          remaining.push({ ...item, attempts, failed: attempts >= MAX_ATTEMPTS, lastError: error.message ?? "" });
         }
       } else {
         sent += 1;
