@@ -12,6 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { useDiagnoses } from "@/lib/data";
 import { diagnosePoultry, type DiagnosisResult } from "@/lib/diagnose.functions";
+import { demoDiagnosis } from "@/lib/diagnosis-demo";
 import { useSettings } from "@/lib/i18n";
 import { useOnlineStatus } from "@/lib/outbox";
 
@@ -97,7 +98,10 @@ function Diagnostic() {
     }
     setLoading(true);
     try {
-      const diagnosis = await runDiagnosis({ data: { imageDataUrl: preview, language } });
+      const diagnosis = await Promise.race([
+        runDiagnosis({ data: { imageDataUrl: preview, language } }),
+        new Promise<DiagnosisResult>((resolve) => setTimeout(() => resolve(demoDiagnosis(language)), 9000)),
+      ]).catch(() => demoDiagnosis(language));
       setResult(diagnosis);
 
       const { data: userData } = await supabase.auth.getUser();
@@ -117,6 +121,7 @@ function Diagnostic() {
           summary: diagnosis.summary,
           recommendations: diagnosis.recommendations,
           language,
+          is_demo: diagnosis.isDemo,
         });
         queryClient.invalidateQueries({ queryKey: ["diagnoses"] });
       }
@@ -192,6 +197,7 @@ function Diagnostic() {
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between gap-2">
               <CardTitle className="font-display text-xl">{result.disease}</CardTitle>
+              {result.isDemo && <Badge variant="outline">{t("demoLabel")}</Badge>}
               <Badge className={SEVERITY_STYLE[result.severity]}>
                 {t(`severity_${result.severity}` as "severity_low")}
               </Badge>
