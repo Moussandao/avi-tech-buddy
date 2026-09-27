@@ -95,6 +95,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const handleSignOut = async () => {
     await queryClient.cancelQueries();
     queryClient.clear();
+    localStorage.removeItem("avitech.cache");
     await supabase.auth.signOut();
     navigate({ to: "/auth", search: { mode: "signin" }, replace: true });
   };

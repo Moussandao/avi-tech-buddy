@@ -4,6 +4,8 @@ import { useState } from "react";
 import { toast } from "sonner";
 
 import { VoiceInput } from "@/components/VoiceInput";
+import { VoiceNotePlayer, VoiceRecorder } from "@/components/VoiceNote";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -59,6 +61,7 @@ function Finances() {
   const [amount, setAmount] = useState("");
   const [batchId, setBatchId] = useState("none");
   const [note, setNote] = useState("");
+  const [voice, setVoice] = useState<Blob | null>(null);
 
   const categories = kind === "expense" ? EXPENSE_CATEGORIES : SALE_CATEGORIES;
 
@@ -71,7 +74,19 @@ function Finances() {
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
+    let voicePath: string | null = null;
+    if (voice && navigator.onLine) {
+      const { data: u } = await supabase.auth.getUser();
+      if (u.user) {
+        const path = `${u.user.id}/${Date.now()}.webm`;
+        const { error } = await supabase.storage
+          .from("poultry-voice-notes")
+          .upload(path, voice, { contentType: voice.type || "audio/webm" });
+        if (!error) voicePath = path;
+      }
+    }
     const result = await createTransaction.mutateAsync({
+      voice_note_url: voicePath,
       kind,
       category,
       amount: Number(amount || 0),
@@ -83,6 +98,7 @@ function Finances() {
     toast.success(result.queued ? t("savedOffline") : t("saved"));
     setAmount("");
     setNote("");
+    setVoice(null);
   };
 
   return (
@@ -213,6 +229,8 @@ function Finances() {
               </div>
             </div>
 
+            <VoiceRecorder value={voice} onChange={setVoice} />
+
             <Button type="submit" className="h-12 w-full">
               {t("save")}
             </Button>
@@ -244,6 +262,7 @@ function Finances() {
                       {new Date(item.occurred_at).toLocaleDateString()}
                       {item.note ? ` · ${item.note}` : ""}
                     </p>
+                    {item.voice_note_url && <VoiceNotePlayer path={item.voice_note_url} />}
                   </div>
                   <span
                     className={
