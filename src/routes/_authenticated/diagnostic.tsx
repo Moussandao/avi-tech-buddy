@@ -59,7 +59,7 @@ function dataUrlToBlob(dataUrl: string): Blob {
   return new Blob([bytes], { type: mime });
 }
 
-const SEVERITY_STYLE: Record<DiagnosisResult["severity"], string> = {
+export const SEVERITY_STYLE: Record<DiagnosisResult["severity"], string> = {
   low: "bg-success text-success-foreground",
   medium: "bg-warning text-warning-foreground",
   high: "bg-destructive text-destructive-foreground",
