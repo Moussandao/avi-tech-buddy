@@ -14,7 +14,231 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      batch_events: {
+        Row: {
+          batch_id: string
+          created_at: string
+          event_type: string
+          id: string
+          note: string | null
+          occurred_at: string
+          quantity: number
+          user_id: string
+        }
+        Insert: {
+          batch_id: string
+          created_at?: string
+          event_type: string
+          id?: string
+          note?: string | null
+          occurred_at?: string
+          quantity?: number
+          user_id: string
+        }
+        Update: {
+          batch_id?: string
+          created_at?: string
+          event_type?: string
+          id?: string
+          note?: string | null
+          occurred_at?: string
+          quantity?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "batch_events_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "batches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      batches: {
+        Row: {
+          breed: string | null
+          created_at: string
+          id: string
+          initial_count: number
+          is_active: boolean
+          name: string
+          notes: string | null
+          start_date: string
+          user_id: string
+        }
+        Insert: {
+          breed?: string | null
+          created_at?: string
+          id?: string
+          initial_count?: number
+          is_active?: boolean
+          name: string
+          notes?: string | null
+          start_date?: string
+          user_id: string
+        }
+        Update: {
+          breed?: string | null
+          created_at?: string
+          id?: string
+          initial_count?: number
+          is_active?: boolean
+          name?: string
+          notes?: string | null
+          start_date?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      diagnoses: {
+        Row: {
+          batch_id: string | null
+          created_at: string
+          disease: string
+          id: string
+          image_path: string | null
+          language: string
+          recommendations: string[]
+          severity: string
+          summary: string | null
+          user_id: string
+        }
+        Insert: {
+          batch_id?: string | null
+          created_at?: string
+          disease: string
+          id?: string
+          image_path?: string | null
+          language?: string
+          recommendations?: string[]
+          severity?: string
+          summary?: string | null
+          user_id: string
+        }
+        Update: {
+          batch_id?: string | null
+          created_at?: string
+          disease?: string
+          id?: string
+          image_path?: string | null
+          language?: string
+          recommendations?: string[]
+          severity?: string
+          summary?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "diagnoses_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "batches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          currency: string
+          farm_name: string
+          id: string
+          language: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          currency?: string
+          farm_name?: string
+          id: string
+          language?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          currency?: string
+          farm_name?: string
+          id?: string
+          language?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      readings: {
+        Row: {
+          created_at: string
+          humidity: number | null
+          id: string
+          recorded_at: string
+          temperature: number | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          humidity?: number | null
+          id?: string
+          recorded_at?: string
+          temperature?: number | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          humidity?: number | null
+          id?: string
+          recorded_at?: string
+          temperature?: number | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      transactions: {
+        Row: {
+          amount: number
+          batch_id: string | null
+          category: string
+          created_at: string
+          currency: string
+          id: string
+          kind: string
+          note: string | null
+          occurred_at: string
+          user_id: string
+        }
+        Insert: {
+          amount?: number
+          batch_id?: string | null
+          category?: string
+          created_at?: string
+          currency?: string
+          id?: string
+          kind: string
+          note?: string | null
+          occurred_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          batch_id?: string | null
+          category?: string
+          created_at?: string
+          currency?: string
+          id?: string
+          kind?: string
+          note?: string | null
+          occurred_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transactions_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "batches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
