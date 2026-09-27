@@ -235,12 +235,12 @@ function Diagnostic() {
           ) : (
             <ul className="divide-y">
               {history.map((item) => (
-                <li key={item.id}>
+                <li key={item.id} className="flex items-center gap-2">
                   <button
                     type="button"
                     onClick={() => setSelected(item)}
                     aria-label={`${t("diagnosisDetail")} : ${item.disease}`}
-                    className="flex min-h-14 w-full items-center justify-between gap-2 rounded-lg px-1 py-3 text-start transition-colors hover:bg-secondary/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    className="flex min-h-14 min-w-0 flex-1 items-center justify-between gap-2 rounded-lg px-1 py-3 text-start transition-colors hover:bg-secondary/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   >
                     <div className="min-w-0">
                       <p className="truncate font-medium">{item.disease}</p>
@@ -255,6 +255,10 @@ function Diagnostic() {
                       <ChevronRight className="size-4 text-muted-foreground rtl:rotate-180" />
                     </span>
                   </button>
+                  <SpeakButton
+                    label=""
+                    text={`${item.disease}. ${item.summary ?? ""} ${(item.recommendations ?? []).join(". ")}`}
+                  />
                 </li>
               ))}
             </ul>
