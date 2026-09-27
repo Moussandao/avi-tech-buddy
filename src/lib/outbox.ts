@@ -7,9 +7,32 @@ export type OutboxTable = "batches" | "batch_events" | "readings" | "transaction
 
 export interface OutboxItem {
   localId: string;
-  table: OutboxTable;
+  table: OutboxTable | "diagnoses";
+  /** insert (default) or delete by payload.id */
+  op?: "insert" | "delete";
   payload: Record<string, unknown>;
   createdAt: string;
+  attempts?: number;
+  failed?: boolean;
+  lastError?: string;
+}
+
+const MAX_ATTEMPTS = 3;
+
+function newId(): string {
+  return typeof crypto !== "undefined" && "randomUUID" in crypto
+    ? crypto.randomUUID()
+    : "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
+        const r = (Math.random() * 16) | 0;
+        return (c === "x" ? r : (r & 0x3) | 0x8).toString(16);
+      });
+}
+
+/** True when an error comes from the network (retry forever) rather than the server refusing the data. */
+function isNetworkError(error: { message?: string; code?: string } | null | undefined): boolean {
+  if (!error) return false;
+  const msg = (error.message ?? "").toLowerCase();
+  return !error.code || msg.includes("fetch") || msg.includes("network") || msg.includes("timeout");
 }
 
 const KEY = "avitech.outbox";
@@ -34,15 +57,34 @@ export function getOutbox(): OutboxItem[] {
   return read();
 }
 
-export function enqueue(table: OutboxTable, payload: Record<string, unknown>): OutboxItem {
+export function enqueue(
+  table: OutboxTable | "diagnoses",
+  payload: Record<string, unknown>,
+  op: "insert" | "delete" = "insert",
+): OutboxItem {
+  const withId = payload["id"] ? payload : { ...payload, id: newId() };
   const item: OutboxItem = {
     localId: `local-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
     table,
-    payload,
+    op,
+    payload: withId,
     createdAt: new Date().toISOString(),
   };
   write([...read(), item]);
   return item;
+}
+
+export { newId };
+
+/** Put failed items back in the queue for another try. */
+export function retryFailed() {
+  write(read().map((i) => (i.failed ? { ...i, failed: false, attempts: 0 } : i)));
+  void flushOutbox();
+}
+
+/** Drop items the server refused. */
+export function discardFailed() {
+  write(read().filter((i) => !i.failed));
 }
 
 export function subscribeOutbox(listener: () => void): () => void {
@@ -64,24 +106,41 @@ export async function flushOutbox(): Promise<number> {
     const { data: sess } = await supabase.auth.getSession();
     const userId = sess.session?.user.id;
     for (const item of items) {
+      if (item.failed) {
+        remaining.push(item);
+        continue;
+      }
       const { __voice_key: voiceKey, ...payload } = item.payload as Record<string, unknown> & {
         __voice_key?: string;
       };
-      if (userId && !payload['user_id']) payload['user_id'] = userId;
-      if (voiceKey) {
-        const blob = await getLocalVoice(voiceKey).catch(() => undefined);
-        if (blob) {
-          const path = await uploadVoice(blob);
-          if (!path) {
-            remaining.push(item);
-            continue;
+      let error: { message?: string; code?: string } | null = null;
+      if (item.op === "delete") {
+        ({ error } = await supabase.from(item.table).delete().eq("id", String(payload["id"])));
+      } else {
+        if (userId && !payload["user_id"]) payload["user_id"] = userId;
+        if (voiceKey) {
+          const blob = await getLocalVoice(voiceKey).catch(() => undefined);
+          if (blob) {
+            const path = await uploadVoice(blob, String(payload["id"]));
+            if (!path) {
+              remaining.push(item);
+              continue;
+            }
+            payload["voice_note_url"] = path;
           }
-          payload['voice_note_url'] = path;
         }
+        // upsert on id: a resend after a lost response never creates a duplicate row.
+        ({ error } = await supabase
+          .from(item.table)
+          .upsert(payload as never, { onConflict: "id", ignoreDuplicates: true }));
       }
-      const { error } = await supabase.from(item.table).insert(payload as never);
       if (error) {
-        remaining.push(item);
+        if (isNetworkError(error)) {
+          remaining.push(item);
+        } else {
+          const attempts = (item.attempts ?? 0) + 1;
+          remaining.push({ ...item, attempts, failed: attempts >= MAX_ATTEMPTS, lastError: error.message });
+        }
       } else {
         sent += 1;
         if (voiceKey) await deleteLocalVoice(voiceKey).catch(() => undefined);
@@ -89,7 +148,9 @@ export async function flushOutbox(): Promise<number> {
     }
   } finally {
     flushing = false;
-    write(remaining);
+    // Keep items queued while we were sending.
+    const known = new Set(items.map((i) => i.localId));
+    write([...remaining, ...read().filter((i) => !known.has(i.localId))]);
   }
   return sent;
 }

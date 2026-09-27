@@ -40,16 +40,16 @@ export function extensionFor(type: string): string {
 }
 
 /** Upload a recording to the private voice-notes storage. Returns the stored path, or null on failure. */
-export async function uploadVoice(blob: Blob): Promise<string | null> {
+export async function uploadVoice(blob: Blob, name?: string): Promise<string | null> {
   try {
     const { data } = await supabase.auth.getSession();
     const userId = data.session?.user.id;
     if (!userId) return null;
     const type = blob.type || "audio/webm";
-    const path = `${userId}/${Date.now()}.${extensionFor(type)}`;
+    const path = `${userId}/${name ?? Date.now()}.${extensionFor(type)}`;
     const { error } = await supabase.storage
       .from("poultry-voice-notes")
-      .upload(path, blob, { contentType: type.split(";")[0] ?? type });
+      .upload(path, blob, { contentType: type.split(";")[0] ?? type, upsert: Boolean(name) });
     if (error) {
       console.error("Voice upload failed", error);
       return null;

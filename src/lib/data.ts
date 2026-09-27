@@ -3,7 +3,7 @@ import { dehydrate, hydrate } from "@tanstack/react-query";
 import { useEffect } from "react";
 
 import { supabase } from "@/integrations/supabase/client";
-import { enqueue, flushOutbox, type OutboxTable } from "./outbox";
+import { enqueue, flushOutbox, newId, type OutboxTable } from "./outbox";
 
 export interface Profile {
   id: string;
@@ -181,12 +181,14 @@ export function useCreateRow(table: OutboxTable) {
   return useMutation({
     mutationFn: async (payload: Record<string, unknown>): Promise<{ queued: boolean }> => {
       const userId = await currentUserId().catch(() => null);
-      const row = { ...payload, ...(userId ? { user_id: userId } : {}) };
+      const row = { id: newId(), ...payload, ...(userId ? { user_id: userId } : {}) };
       if (typeof navigator !== "undefined" && !navigator.onLine) {
         enqueue(table, row);
         return { queued: true };
       }
-      const { error } = await supabase.from(table).insert(row as never);
+      const { error } = await supabase
+        .from(table)
+        .upsert(row as never, { onConflict: "id", ignoreDuplicates: true });
       if (error) {
         enqueue(table, row);
         return { queued: true };
@@ -204,10 +206,29 @@ export function useDeleteRow(table: OutboxTable | "diagnoses") {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
+      const removeLocally = () =>
+        qc.setQueriesData<{ id: string }[]>({ queryKey: [table] }, (old) =>
+          Array.isArray(old) ? old.filter((r) => r.id !== id) : old,
+        );
+      if (typeof navigator !== "undefined" && !navigator.onLine) {
+        enqueue(table, { id }, "delete");
+        removeLocally();
+        return { queued: true };
+      }
       const { error } = await supabase.from(table).delete().eq("id", id);
-      if (error) throw error;
+      if (error) {
+        if (!error.code || /fetch|network/i.test(error.message)) {
+          enqueue(table, { id }, "delete");
+          removeLocally();
+          return { queued: true };
+        }
+        throw error;
+      }
+      return { queued: false };
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: [table] }),
+    onSuccess: (res) => {
+      if (!res.queued) qc.invalidateQueries({ queryKey: [table] });
+    },
   });
 }
 
