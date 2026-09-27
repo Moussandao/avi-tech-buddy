@@ -183,6 +183,11 @@ function Diagnostic() {
             {loading ? <Loader2 className="me-2 size-5 animate-spin" /> : <Stethoscope className="me-2 size-5" />}
             {loading ? t("analyzing") : t("analyze")}
           </Button>
+          {loading && (
+            <p role="status" className="text-center text-sm text-muted-foreground">
+              {t("analyzingLong")}
+            </p>
+          )}
           {!online && <p className="text-center text-sm text-warning">{t("diagnosisOffline")}</p>}
         </CardContent>
       </Card>
