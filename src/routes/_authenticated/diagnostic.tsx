@@ -95,8 +95,11 @@ function Diagnostic() {
     try {
       const diagnosis = await Promise.race([
         runDiagnosis({ data: { imageDataUrl: preview, language } }),
-        new Promise<DiagnosisResult>((resolve) => setTimeout(() => resolve(demoDiagnosis(language)), 27000)),
-      ]).catch(() => demoDiagnosis(language));
+        new Promise<DiagnosisResult>((resolve) => setTimeout(() => resolve(demoDiagnosis(language)), 45000)),
+      ]).catch((err: unknown) => {
+        if (err instanceof Error && err.message.includes("AI_")) throw err;
+        return demoDiagnosis(language);
+      });
       setResult(diagnosis);
 
       const { data: userData } = await supabase.auth.getUser();
@@ -122,8 +125,8 @@ function Diagnostic() {
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : "";
-      if (message.includes("AI_RATE_LIMIT")) toast.error("⏳ " + t("error"));
-      else if (message.includes("AI_NO_CREDITS")) toast.error(t("error"));
+      if (message.includes("AI_RATE_LIMIT")) toast.error(t("aiRateLimit"));
+      else if (message.includes("AI_NO_CREDITS")) toast.error(t("aiNoCredits"));
       else toast.error(t("error"));
     } finally {
       setLoading(false);
