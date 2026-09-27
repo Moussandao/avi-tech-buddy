@@ -95,7 +95,7 @@ function Diagnostic() {
     try {
       const diagnosis = await Promise.race([
         runDiagnosis({ data: { imageDataUrl: preview, language } }),
-        new Promise<DiagnosisResult>((resolve) => setTimeout(() => resolve(demoDiagnosis(language)), 9000)),
+        new Promise<DiagnosisResult>((resolve) => setTimeout(() => resolve(demoDiagnosis(language)), 27000)),
       ]).catch(() => demoDiagnosis(language));
       setResult(diagnosis);
 
