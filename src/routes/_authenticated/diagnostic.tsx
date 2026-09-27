@@ -219,7 +219,7 @@ function Diagnostic() {
                 ))}
               </ul>
             </div>
-            <SpeakButton text={spoken} />
+            <SpeakButton text={spoken} prefetch />
             <p className="flex items-start gap-2 rounded-xl bg-warning/15 p-3 text-xs text-muted-foreground">
               <AlertTriangle className="mt-0.5 size-4 shrink-0 text-warning" />
               {t("disclaimer")}
