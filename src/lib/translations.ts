@@ -9,7 +9,7 @@ export const LANGUAGES: { code: Language; label: string; flag: string; dir: "ltr
 export const SPEECH_LOCALE: Record<Language, string> = {
   fr: "fr-FR",
   en: "en-US",
-  ar: "ar-MA",
+  ar: "ar-SA",
 };
 
 const fr = {
@@ -116,6 +116,10 @@ const fr = {
   listening: "Parlez…",
   voiceUnsupported: "La dictée vocale n'est pas disponible sur cet appareil",
   readSummary: "Écouter le bilan",
+  demoLabel: "Démo",
+  voiceEntry: "Saisie vocale",
+  voiceTapToSpeak: "Appuyez et parlez, ex. « Achat de 3 sacs d'aliments pour 450 dirhams »",
+  voiceApply: "Remplir le formulaire",
   install: "Installer l'application",
   theme: "Thème",
   date: "Date",
@@ -226,6 +230,10 @@ const en: Record<TranslationKey, string> = {
   listening: "Speak now…",
   voiceUnsupported: "Voice input is not available on this device",
   readSummary: "Listen to the summary",
+  demoLabel: "Demo",
+  voiceEntry: "Voice entry",
+  voiceTapToSpeak: "Tap and speak, e.g. \"Bought 3 bags of feed for 450 dirhams\"",
+  voiceApply: "Fill the form",
   install: "Install the app",
   theme: "Theme",
   date: "Date",
@@ -333,6 +341,10 @@ const ar: Record<TranslationKey, string> = {
   listening: "تكلم الآن…",
   voiceUnsupported: "الإدخال الصوتي غير متاح على هذا الجهاز",
   readSummary: "استماع إلى الحصيلة",
+  demoLabel: "تجريبي",
+  voiceEntry: "إدخال صوتي",
+  voiceTapToSpeak: "اضغط وتكلم، مثلا: شراء 3 أكياس علف بـ 450 درهم",
+  voiceApply: "ملء النموذج",
   install: "تثبيت التطبيق",
   theme: "المظهر",
   date: "التاريخ",
