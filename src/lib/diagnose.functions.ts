@@ -111,9 +111,10 @@ Example: {"diagnosis":"...","severity":"medium","summary":"...","recommended_act
 IMPORTANT: your previous answer was not valid JSON. Reply with the JSON object only, even if the image is unclear (then say so in "summary").`;
 
     try {
+      const startedAt = Date.now();
       let content = await askModel(apiKey, prompt, data.imageDataUrl);
       let parsed = readAnswer(content);
-      if (!parsed) {
+      if (!parsed && Date.now() - startedAt < 12000) {
         console.warn("NVIDIA diagnosis: unreadable answer, retrying", content.slice(0, 300));
         content = await askModel(apiKey, strictPrompt, data.imageDataUrl);
         parsed = readAnswer(content);
