@@ -107,7 +107,9 @@ Rédige tous les textes en ${LANGUAGE_NAME[data.language]}. Reste prudent : si l
 
     const parsed = extractJson(text) as Partial<DiagnosisResult>;
     const severity =
-      ["low", "high", "critical"].includes(parsed.severity) ? parsed.severity : "medium";
+      parsed.severity === "low" || parsed.severity === "high" || parsed.severity === "critical"
+        ? parsed.severity
+        : "medium";
 
     return {
       disease: String(parsed.disease ?? "—").slice(0, 160),
