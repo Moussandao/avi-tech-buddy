@@ -6,6 +6,8 @@ import { toast } from "sonner";
 import { VoiceInput } from "@/components/VoiceInput";
 import { VoiceTransactionDialog } from "@/components/VoiceTransactionDialog";
 import { SpeakButton } from "@/components/SpeakButton";
+import { enqueue, flushOutbox } from "@/lib/outbox";
+import { saveVoiceLocally, uploadVoice } from "@/lib/voice-store";
 import { VoiceNotePlayer, VoiceRecorder } from "@/components/VoiceNote";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -76,19 +78,7 @@ function Finances() {
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
-    let voicePath: string | null = null;
-    if (voice && navigator.onLine) {
-      const { data: u } = await supabase.auth.getUser();
-      if (u.user) {
-        const path = `${u.user.id}/${Date.now()}.webm`;
-        const { error } = await supabase.storage
-          .from("poultry-voice-notes")
-          .upload(path, voice, { contentType: voice.type || "audio/webm" });
-        if (!error) voicePath = path;
-      }
-    }
-    const result = await createTransaction.mutateAsync({
-      voice_note_url: voicePath,
+    const row = {
       kind,
       category,
       amount: Number(amount || 0),
@@ -96,7 +86,25 @@ function Finances() {
       batch_id: batchId === "none" ? null : batchId,
       note: note || null,
       occurred_at: new Date().toISOString(),
-    });
+    };
+    let result: { queued: boolean };
+    let voicePath: string | null = null;
+    if (voice && navigator.onLine) voicePath = await uploadVoice(voice);
+    if (voice && !voicePath) {
+      // Offline or upload failed: keep the recording on the device and send it later with the expense.
+      try {
+        const key = await saveVoiceLocally(voice);
+        enqueue("transactions", { ...row, __voice_key: key });
+        if (navigator.onLine) void flushOutbox();
+        result = { queued: true };
+        toast.info(t("voiceSavedLater"));
+      } catch {
+        toast.error(t("voiceSaveFailed"));
+        return;
+      }
+    } else {
+      result = await createTransaction.mutateAsync({ ...row, voice_note_url: voicePath });
+    }
     toast.success(result.queued ? t("savedOffline") : t("saved"));
     setAmount("");
     setNote("");

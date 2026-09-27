@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 
 import { supabase } from "@/integrations/supabase/client";
+import { deleteLocalVoice, getLocalVoice, uploadVoice } from "@/lib/voice-store";
 
 export type OutboxTable = "batches" | "batch_events" | "readings" | "transactions";
 
@@ -60,12 +61,30 @@ export async function flushOutbox(): Promise<number> {
   let sent = 0;
   const remaining: OutboxItem[] = [];
   try {
+    const { data: sess } = await supabase.auth.getSession();
+    const userId = sess.session?.user.id;
     for (const item of items) {
-      const { error } = await supabase.from(item.table).insert(item.payload as never);
+      const { __voice_key: voiceKey, ...payload } = item.payload as Record<string, unknown> & {
+        __voice_key?: string;
+      };
+      if (userId && !payload.user_id) payload.user_id = userId;
+      if (voiceKey) {
+        const blob = await getLocalVoice(voiceKey).catch(() => undefined);
+        if (blob) {
+          const path = await uploadVoice(blob);
+          if (!path) {
+            remaining.push(item);
+            continue;
+          }
+          payload.voice_note_url = path;
+        }
+      }
+      const { error } = await supabase.from(item.table).insert(payload as never);
       if (error) {
         remaining.push(item);
       } else {
         sent += 1;
+        if (voiceKey) await deleteLocalVoice(voiceKey).catch(() => undefined);
       }
     }
   } finally {
