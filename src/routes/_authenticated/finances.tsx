@@ -4,6 +4,8 @@ import { useState } from "react";
 import { toast } from "sonner";
 
 import { VoiceInput } from "@/components/VoiceInput";
+import { VoiceTransactionDialog } from "@/components/VoiceTransactionDialog";
+import { SpeakButton } from "@/components/SpeakButton";
 import { VoiceNotePlayer, VoiceRecorder } from "@/components/VoiceNote";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -125,6 +127,10 @@ function Finances() {
           </CardContent>
         </Card>
       </div>
+      <SpeakButton
+        label={t("readSummary")}
+        text={`${t("totalSale")}: ${money(totalSale)}. ${t("totalExpense")}: ${money(totalExpense)}. ${t("balance")}: ${money(totalSale - totalExpense)}.`}
+      />
 
       <Card>
         <CardHeader className="pb-2">
@@ -132,6 +138,15 @@ function Finances() {
         </CardHeader>
         <CardContent>
           <form className="space-y-3" onSubmit={submit}>
+            <VoiceTransactionDialog
+              onApply={(p, text) => {
+                if (p.kind) setKind(p.kind);
+                if (p.category) setCategory(p.category);
+                else if (p.kind) setCategory(p.kind === "sale" ? "eggs" : "feed");
+                if (p.amount !== null) setAmount(String(p.amount));
+                setNote(text);
+              }}
+            />
             <div className="grid grid-cols-2 gap-2">
               <Button
                 type="button"
