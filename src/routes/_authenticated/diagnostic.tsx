@@ -1,7 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQueryClient } from "@tanstack/react-query";
-import { AlertTriangle, Camera, ImagePlus, Loader2, Stethoscope } from "lucide-react";
+import { AlertTriangle, Camera, ChevronRight, ImagePlus, Loader2, Stethoscope } from "lucide-react";
+import { DiagnosisDetailSheet, SEVERITY_STYLE } from "@/components/DiagnosisDetailSheet";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
 
@@ -10,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
-import { useDiagnoses } from "@/lib/data";
+import { useDiagnoses, type Diagnosis } from "@/lib/data";
 import { diagnosePoultry, type DiagnosisResult } from "@/lib/diagnose.functions";
 import { demoDiagnosis } from "@/lib/diagnosis-demo";
 import { useSettings } from "@/lib/i18n";
