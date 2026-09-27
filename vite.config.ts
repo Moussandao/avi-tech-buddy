@@ -13,6 +13,6 @@ export default defineConfig({
     server: { entry: "server" },
   },
   vite: {
-    optimizeDeps: { include: ["@radix-ui/react-dialog"] },
+    optimizeDeps: { include: ["@radix-ui/react-dialog", "@radix-ui/react-alert-dialog"] },
   },
 });
