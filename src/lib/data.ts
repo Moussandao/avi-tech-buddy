@@ -65,9 +65,10 @@ export interface Diagnosis {
 }
 
 async function currentUserId(): Promise<string> {
-  const { data } = await supabase.auth.getUser();
-  if (!data.user) throw new Error("not authenticated");
-  return data.user.id;
+  const { data } = await supabase.auth.getSession();
+  const id = data.session?.user.id;
+  if (!id) throw new Error("not authenticated");
+  return id;
 }
 
 export function useProfile() {
